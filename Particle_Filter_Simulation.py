@@ -68,17 +68,18 @@ def calc_covariance(x_est, px, pw):
     return cov
 
 def re_sampling(px, pw):
-    w_cum = np.cumsum(pw)
-    base = np.arange(0.0, 1.0, 1 / NP)
-    re_sample_id = base + np.random.uniform(0, 1 / NP)
+    w_cum = np.cumsum(pw) # 각 Weight 값을 누적합!
+    base = np.arange(0.0, 1.0, 1 / NP) #[0 ... 1.0] <- 100개의 Value 생성
+    re_sample_id = base + np.random.uniform(0, 1 / NP) # 난수 더하기
     indexes = []
     ind = 0
     for ip in range(NP):
-        while re_sample_id[ip] > w_cum[ind]:
+        # 리생플링되는 Particle data가 누적합된 data보다 작은 것을 append
+        while re_sample_id[ip] > w_cum[ind]: 
             ind += 1
         indexes.append(ind)
 
-    px = px[:, indexes]
+    px = px[:, indexes] # init particles
     pw = np.zeros((1, NP)) + 1.0 / NP  # init weight
 
     return px, pw
@@ -91,9 +92,10 @@ def pf_localization(dt, px, pw, z, u):
         ud1 = u[0, 0] + np.random.randn() * R[0, 0] ** 0.5
         ud2 = u[1, 0] + np.random.randn() * R[1, 1] ** 0.5
         ud = np.array([[ud1, ud2]]).T
-        x = motion_model(x, ud, dt) # NP 번의 Prediction을 수행. 여기서 중요한건 R을 곱한 velocity, yaw rate를 사용한다는 점!
+        # NP 번의 Prediction을 수행. 여기서 중요한건 R을 곱한 velocity, yaw rate를 사용한다는 점!
+        x = motion_model(x, ud, dt) 
 
-        #  Calc Importance Weight
+        # 분포가 많은 곳을 찾기 위해 Weight 정보들을 Maximun Likelihood 처리
         for i in range(len(z[:, 0])):
             pre_z = math.hypot(x[0, 0] - z[i, 1], x[1, 0] - z[i, 2])
             dz = pre_z - z[i, 0]
